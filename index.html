@@ -1,178 +1,131 @@
 <!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>E-Rickshaw India</title>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#16a34a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://cdn.tailwindcss.com"></script>
-
-<style>
-#map{height:260px;border-radius:16px}
-.ride-option{
-  display:flex;justify-content:space-between;
-  padding:14px;border:2px solid #e5e7eb;
-  border-radius:14px;margin-bottom:10px;
-  cursor:pointer;background:#fff
-}
-.ride-option.active{
-  border-color:#22c55e;
-  box-shadow:0 6px 16px rgba(0,0,0,.15)
-}
-.toast{
-  position:fixed;bottom:20px;left:50%;
-  transform:translateX(-50%);
-  background:#22c55e;color:#fff;
-  padding:10px 20px;border-radius:14px;
-  z-index: 1000;
-}
-.hidden{display:none}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ই-রিকশা বুকিং অ্যাপ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #map { height: 350px; width: 100%; border-radius: 12px; z-index: 1; }
+        .hidden { display: none; }
+    </style>
 </head>
+<body class="bg-gray-100 font-sans">
 
-<body class="bg-yellow-400 font-sans">
+    <header class="bg-green-600 p-4 text-white flex justify-between items-center sticky top-0 z-50 shadow-md">
+        <h1 class="text-xl font-bold">E-Rickshaw India</h1>
+        <button onclick="showView('driver-login')" class="bg-yellow-400 text-black px-4 py-1 rounded-lg text-sm font-bold">Driver Login</button>
+    </header>
 
-<section id="loginScreen" class="min-h-screen flex items-center justify-center">
-  <div class="bg-white p-6 rounded-3xl w-80 shadow-xl">
-    <h2 class="text-center text-xl font-bold mb-4">Login</h2>
-    <input id="name" type="text" placeholder="Your Name" class="w-full border p-2 rounded mb-2">
-    <input id="phone" type="tel" placeholder="Mobile Number" class="w-full border p-2 rounded mb-2">
-    <input id="otp" type="number" placeholder="OTP (1234)" class="w-full border p-2 rounded mb-3">
-    <button onclick="login()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Login</button>
-    <p class="text-xs text-gray-500 mt-2 text-center">Demo OTP: <b>1234</b></p>
-  </div>
-</section>
+    <main id="user-view" class="p-4 space-y-4">
+        <div id="map" class="shadow-inner border-2 border-white"></div>
 
-<section id="appScreen" class="hidden">
-<header class="bg-green-600 text-white p-4 flex justify-between items-center">
-  <h1 class="font-bold">E-Rickshaw India</h1>
-  <button onclick="logout()" class="bg-red-500 px-3 py-1 rounded text-sm">Logout</button>
-</header>
+        <div class="bg-white p-5 rounded-2xl shadow-lg border-t-4 border-green-500">
+            <h2 class="text-gray-700 font-bold mb-3">কোথা থেকে কোথায় যাবেন?</h2>
+            <input type="text" placeholder="পিকআপ লোকেশন" class="w-full p-3 mb-2 bg-gray-50 border rounded-lg focus:outline-none">
+            <input type="text" placeholder="গন্তব্য (Destination)" class="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none">
+            
+            <div class="grid grid-cols-2 gap-3 mt-4">
+                <div class="border-2 border-green-500 p-3 rounded-xl bg-green-50 text-center cursor-pointer" onclick="selectRide('Share')">
+                    <p class="font-bold text-green-700">শেয়ার (Share)</p>
+                    <p class="text-lg font-bold">₹১০/কিমি</p>
+                </div>
+                <div class="border-2 border-gray-800 p-3 rounded-xl bg-gray-900 text-white text-center cursor-pointer" onclick="selectRide('Reserve')">
+                    <p class="font-bold">রিজার্ভ (6x)</p>
+                    <p class="text-lg font-bold">₹৬০/কিমি</p>
+                </div>
+            </div>
 
-<div class="max-w-md mx-auto mt-4 bg-white rounded-3xl shadow-xl p-4">
-  <div id="map"></div>
-  <div class="flex justify-between items-center mt-3 text-sm">
-    <div>💰 Wallet: ₹<span id="balance">172</span></div>
-    <div>⭐ 4.6</div>
-  </div>
-  <p class="text-xs text-gray-500 mt-2">📍 Current Location → Destination</p>
+            <button onclick="processOTP()" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl mt-4 text-lg shadow-lg active:scale-95 transition">এখনই বুক করুন</button>
+        </div>
+    </main>
 
-  <div class="mt-3">
-    <div class="ride-option" onclick="selectRide(this,'Bike',38)">
-      <span>🏍️ Bike<br><small>2 min · Fast</small></span>
-      <span class="font-bold">₹38</span>
-    </div>
-    <div class="ride-option" onclick="selectRide(this,'Auto',78)">
-      <span>🛺 Auto / E-Rickshaw<br><small>3 min · Comfortable</small></span>
-      <span class="font-bold">₹78</span>
-    </div>
-    <div class="ride-option" onclick="selectRide(this,'Cab',113)">
-      <span>🚗 Cab Economy<br><small>6 min · AC</small></span>
-      <span class="font-bold">₹113</span>
-    </div>
-  </div>
+    <section id="driver-login" class="hidden p-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-yellow-500">
+            <h2 class="text-2xl font-bold text-center mb-5 text-gray-800">ড্রাইভার রেজিস্ট্রেশন</h2>
+            <div class="space-y-4">
+                <input type="text" placeholder="সম্পূর্ণ নাম" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-400">
+                <input type="text" placeholder="আধার নম্বর (১২ সংখ্যা)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-400">
+                <input type="text" placeholder="গাড়ির নম্বর" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-400">
+                <p class="text-xs text-red-500">গাড়ির কাগজ ও আধার কার্ডের ছবি আপলোড করুন</p>
+                <input type="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-yellow-50 file:text-yellow-700">
+                <button onclick="showView('driver-dashboard')" class="w-full bg-yellow-500 text-black py-3 rounded-lg font-bold text-lg hover:bg-yellow-600 transition">সাবমিট করুন</button>
+                <button onclick="showView('user-view')" class="w-full text-gray-500 text-sm mt-4">ফিরে যান</button>
+            </div>
+        </div>
+    </section>
 
-  <button onclick="bookRide()" class="w-full bg-yellow-400 mt-3 py-3 rounded-xl font-bold">Book Ride</button>
-</div>
+    <section id="driver-dashboard" class="hidden p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-xl border-t-8 border-green-600">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-800">ড্রাইভার ড্যাশবোর্ড</h2>
+                <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Online</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-xl text-center">
+                    <p class="text-xs text-blue-600 font-semibold uppercase">মোট আয়</p>
+                    <p class="text-2xl font-black text-blue-800">₹১,২৫০</p>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-xl text-center">
+                    <p class="text-xs text-orange-600 font-semibold uppercase">মোট কিমি</p>
+                    <p class="text-2xl font-black text-orange-800">৪৭ কিমি</p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between p-3 bg-gray-50 rounded-lg">
+                    <span>আজকের ট্রিপ:</span> <span class="font-bold">১২টি</span>
+                </div>
+                <button class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md">পেমেন্ট উইথড্র (Withdraw)</button>
+                <button onclick="showView('user-view')" class="w-full border-2 border-red-500 text-red-500 font-bold py-3 rounded-xl">লগ আউট</button>
+            </div>
+        </div>
+    </section>
 
-<div class="max-w-md mx-auto mt-4 grid grid-cols-3 gap-2 px-2">
-  <button onclick="toggleHistory()" class="bg-white py-2 rounded-xl text-sm shadow">📜 History</button>
-  <button onclick="alert('Refer & Earn Demo')" class="bg-white py-2 rounded-xl text-sm shadow">🎁 Refer</button>
-  <button onclick="sendSOS()" class="bg-red-600 text-white py-2 rounded-xl text-sm shadow">🚨 SOS</button>
-</div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ম্যাপ সেটআপ (ভারত লোকেশন)
+        var map = L.map('map').setView([22.5726, 88.3639], 13); // ডিফল্ট কলকাতা ম্যাপ
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.marker([22.5726, 88.3639]).addTo(map).bindPopup('আপনার লোকেশন').openPopup();
 
-<div id="history" class="max-w-md mx-auto mt-3 bg-white rounded-xl p-3 hidden shadow"></div>
+        function showView(viewId) {
+            document.getElementById('user-view').classList.add('hidden');
+            document.getElementById('driver-login').classList.add('hidden');
+            document.getElementById('driver-dashboard').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
 
-<div id="rating" class="max-w-md mx-auto mt-3 bg-white rounded-xl p-3 hidden shadow text-center">
-  <p class="mb-2 font-bold">Rate Driver:</p>
-  <span class="text-2xl cursor-pointer" onclick="rate(1)">⭐</span>
-  <span class="text-2xl cursor-pointer" onclick="rate(2)">⭐</span>
-  <span class="text-2xl cursor-pointer" onclick="rate(3)">⭐</span>
-  <span class="text-2xl cursor-pointer" onclick="rate(4)">⭐</span>
-  <span class="text-2xl cursor-pointer" onclick="rate(5)">⭐</span>
-</div>
-</section>
+        function selectRide(type) {
+            alert(type + " সিলেক্ট করা হয়েছে। ভাড়া ক্যালকুলেট করা হচ্ছে...");
+        }
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-// PWA Service Worker Registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js');
-  });
-}
-
-// LOGIN
-function login(){
-  const otp=document.getElementById("otp").value;
-  if(otp==="1234"){
-    document.getElementById("loginScreen").classList.add("hidden");
-    document.getElementById("appScreen").classList.remove("hidden");
-    setTimeout(initMap, 300); // ম্যাপ লোড হওয়ার সময় দেওয়া হলো
-  }else{
-    toast("Invalid OTP");
-  }
-}
-function logout(){ location.reload(); }
-
-// MAP
-function initMap(){
-  var map=L.map('map').setView([22.5726,88.3639],13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  L.marker([22.5726,88.3639]).addTo(map).bindPopup('You are here').openPopup();
-}
-
-// STATE
-let selectedRide=null;
-let selectedFare=0;
-let wallet=172;
-
-function selectRide(el,ride,fare){
- document.querySelectorAll('.ride-option').forEach(r=>r.classList.remove('active'));
- el.classList.add('active');
- selectedRide=ride;
- selectedFare=fare;
-}
-
-function bookRide(){
- if(!selectedRide){toast("Select a ride");return;}
- if(wallet<selectedFare){toast("Low balance");return;}
- wallet-=selectedFare;
- document.getElementById("balance").innerText=wallet;
- addHistory(selectedRide,selectedFare);
- toast(selectedRide+" booked 🚕");
- document.getElementById("rating").classList.remove("hidden");
-}
-
-function addHistory(type,fare){
- const h=document.getElementById("history");
- const d=document.createElement("div");
- d.className = "border-b py-1 text-sm";
- d.innerText=`🚕 ${type} - ₹${fare} (${new Date().toLocaleTimeString()})`;
- h.prepend(d);
-}
-
-function toggleHistory(){ document.getElementById("history").classList.toggle("hidden"); }
-function sendSOS(){ alert("🚨 Emergency Alert Sent to Local Authorities!"); }
-function rate(s){ 
-    toast("You rated "+s+" ⭐"); 
-    document.getElementById("rating").classList.add("hidden");
-}
-
-function toast(msg){
- const t=document.createElement("div");
- t.className="toast";
- t.innerText=msg;
- document.body.appendChild(t);
- setTimeout(()=>t.remove(),2500);
-}
-</script>
+        function processOTP() {
+            let phone = prompt("আপনার ১০ ডিজিটের মোবাইল নম্বর দিন:");
+            if(phone && phone.length === 10) {
+                alert("আপনার ফোনে ওটিপি পাঠানো হয়েছে। সঠিক ওটিপি দিলে রিকশা আপনার গন্তব্যে রওনা হবে।");
+                alert("পেমেন্ট অপশন: UPI (PhonePe/GPay), Cash.");
+            } else {
+                alert("সঠিক মোবাইল নম্বর দিন।");
+            }
+        }
+    </script>
 </body>
+</html>
+<h1>👋 Hello World!</h1>
+    <script  src="./script.js"></script>
+
+  </body>
+  
 </html>
